@@ -3,8 +3,10 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"os"
+	"sort"
 )
 
 const path = "items.json"
@@ -20,7 +22,17 @@ type SaleItem struct {
 // matchSales adds the sales procentage of the item
 // and sorts the array accordingly.
 func matchSales(budget float64, items []SaleItem) []SaleItem {
-	panic("NOT IMPLEMENTED")
+	var mi []SaleItem
+	for _, item := range items {
+		if item.ReducedPrice <= budget {
+			item.SalePercentage = -(item.ReducedPrice - item.OriginalPrice) / item.OriginalPrice * 100
+			mi = append(mi, item)
+		}
+	}
+	sort.Slice(mi, func(i, j int) bool {
+		return mi[i].SalePercentage > mi[j].SalePercentage
+	})
+	return mi
 }
 
 func main() {
