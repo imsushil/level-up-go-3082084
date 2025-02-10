@@ -11,6 +11,19 @@ import (
 
 const path = "friends.json"
 
+// visited friends
+type VisitedFriends struct {
+	visited map[string]bool 
+}
+
+func (vf *VisitedFriends) isVisited(id string) bool {
+	return vf.visited[id]
+}
+
+func (vf *VisitedFriends) setVisited(id string) {
+	vf.visited[id] = true
+}
+
 // Friend represents a friend and their connections.
 type Friend struct {
 	ID      string   `json:"id"`
@@ -41,20 +54,28 @@ func (f *Friends) getRandomFriend() Friend {
 }
 
 // spreadGossip ensures that all the friends in the map have heard the news
-func spreadGossip(root Friend, friends Friends) {
-	panic("NOT IMPLEMENTED")
+func spreadGossip(root Friend, friends Friends, visitedFriends VisitedFriends) {
+	visitedFriends.setVisited(root.ID)
+	for _, id := range root.Friends {
+		if visitedFriends.isVisited(id) || root.ID == id {
+			continue
+		}
+		friend := friends.getFriend(id)
+		friend.hearGossip()
+		spreadGossip(friend, friends, visitedFriends)
+	}
 }
 
 func main() {
-	friends := importData()
+	friends, visitedFriends := importData()
 	root := friends.getRandomFriend()
 	root.hearGossip()
-	spreadGossip(root, friends)
+	spreadGossip(root, friends, visitedFriends)
 }
 
 // importData reads the input data from file and
 // creates the friends map.
-func importData() Friends {
+func importData() (Friends, VisitedFriends) {
 	file, err := os.ReadFile(path)
 	if err != nil {
 		log.Fatal(err)
@@ -67,11 +88,15 @@ func importData() Friends {
 	}
 
 	fm := make(map[string]Friend, len(data))
+	vf := make(map[string]bool, len(data))
 	for _, d := range data {
 		fm[d.ID] = d
+		vf[d.ID] = false
 	}
 
 	return Friends{
 		fmap: fm,
+	}, VisitedFriends {
+		visited: vf,
 	}
 }
